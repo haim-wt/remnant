@@ -127,7 +127,8 @@ vec3 estimate_normal(vec3 p)
 	// float dx = compute_distance(vec3(p.x + EPSILON, p.y, p.z)) - compute_distance(vec3(p.x - EPSILON, p.y, p.z));
 	// float dy = compute_distance(vec3(p.x, p.y + EPSILON, p.z)) - compute_distance(vec3(p.x, p.y - EPSILON, p.z));
 	// float dz = compute_distance(vec3(p.x, p.y, p.z + EPSILON)) - compute_distance(vec3(p.x, p.y, p.z - EPSILON));
-	// return normalize(vec3(dx, dy, dz));
+	// return normaliz
+	e(vec3(dx, dy, dz));
 	return vec3(0);
 }
 
