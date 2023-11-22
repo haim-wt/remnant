@@ -19,12 +19,13 @@ const float INV_PI = 1.0/PI;
 const float INV_TWO_PI = 1.0/TWO_PI;
 const float EPSILON = 1.0e-4;
 const int MAX_DIST = 100;
+const int OBJ_COUNT = 256;
 
 out vec4 color;
 in vec2 TexCoords;
 
-vec3[128] objects;
-float[128] distances;
+vec3[OBJ_COUNT] objects;
+float[OBJ_COUNT] distances;
 
 float sdSphere( vec3 p, float s )
 {
@@ -88,7 +89,7 @@ mat4 rotate_matrix(vec3 n, float theta)
 }
 
 void getObjects() {
-	for (int i=0;i<128;i++){
+	for (int i=0;i<OBJ_COUNT;i++){
 		objects[i] = vec3(-10 + 8*i, -10 + 8*i,  -50 - 8*i);
 	}
 }
@@ -96,7 +97,7 @@ void getObjects() {
 float compute_distances(vec3 ray) 
 {
 	float min_dist = MAX_DIST;
-	for (int obj = 0 ; obj < 128; obj++) {
+	for (int obj = 0 ; obj < OBJ_COUNT; obj++) {
 		distances[obj] = sdSphere(ray - objects[obj], 1);
 		min_dist = min(min_dist, distances[obj]);
 	}
