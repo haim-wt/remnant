@@ -9,6 +9,7 @@ Shows how to pass both position and color as inputs to a shader via a VBO
 import (
 	"log"
 	"runtime"
+	"time"
 
 	"github.com/go-gl/gl/v4.1-core/gl"
 	"github.com/go-gl/glfw/v3.3/glfw"
@@ -83,7 +84,6 @@ func createTriangleVAO(vertices []float32) uint32 {
 }
 
 func programLoop(window *glfw.Window) error {
-
 	// the linked shader program determines how the data will be rendered
 	vertShader, err := NewShaderFromFile("vertex.glsl", gl.VERTEX_SHADER)
 	if err != nil {
@@ -114,45 +114,40 @@ func programLoop(window *glfw.Window) error {
 
 	c := 0.0
 	VAO := createTriangleVAO(vertices)
+
+	prog := shaderProgram.Use()
+	timeLocation := gl.GetUniformLocation(prog, gl.Str("time\x00"))
+	resolutionLocation := gl.GetUniformLocation(prog, gl.Str("resolution\x00"))
+	light_positionLocation := gl.GetUniformLocation(prog, gl.Str("light_position\x00"))
+	origin_position := gl.GetUniformLocation(prog, gl.Str("ray_origin\x00"))
+
 	for !window.ShouldClose() {
+		startTime := time.Now()
 		// poll events and call their registered callbacks
 		glfw.PollEvents()
-		t := 0.0
+
 		// perform rendering
 		gl.ClearColor(0.0, 0.0, 0.0, 1.0)
 		gl.Clear(gl.COLOR_BUFFER_BIT)
 
 		// draw loop
 
-		c += 0.05
+		c += 0.01
 		ro = [3]float32{0, 0, -float32(c)}
 
-		// draw triangle
-		prog := shaderProgram.Use()
-		gl.UseProgram(prog)
 		gl.BindVertexArray(VAO)
 		gl.DrawArrays(gl.TRIANGLES, 0, 6) // 6 vertices for two triangles
 		gl.BindVertexArray(0)
 
-		timeLocation := gl.GetUniformLocation(prog, gl.Str("time\x00"))
-		gl.Uniform1f(timeLocation, float32(t))
-
-		resolutionLocation := gl.GetUniformLocation(prog, gl.Str("resolution\x00"))
+		gl.Uniform1f(timeLocation, float32(c))
 		gl.Uniform2fv(resolutionLocation, 1, &res[0])
-
-		light_positionLocation := gl.GetUniformLocation(prog, gl.Str("light_position\x00"))
 		gl.Uniform4fv(light_positionLocation, 1, &lp[0])
-
-		origin_position := gl.GetUniformLocation(prog, gl.Str("ray_origin\x00"))
 		gl.Uniform3fv(origin_position, 1, &ro[0])
 
-		// end of draw loop
-
-		// swap in the rendered buffer
 		window.SwapBuffers()
 
-		t++
-
+		frameTime := time.Since(startTime).Milliseconds()
+		log.Default().Println("Frame time:", frameTime, "ms")
 	}
 
 	return nil

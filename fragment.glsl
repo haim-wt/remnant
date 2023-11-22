@@ -18,13 +18,13 @@ const float TWO_PI = 2.0*PI;
 const float INV_PI = 1.0/PI;
 const float INV_TWO_PI = 1.0/TWO_PI;
 const float EPSILON = 1.0e-4;
-const int MAX_DIST = 30;
+const int MAX_DIST = 100;
 
 out vec4 color;
 in vec2 TexCoords;
 
-vec3[50] objects;
-float[50] distances;
+vec3[128] objects;
+float[128] distances;
 
 float sdSphere( vec3 p, float s )
 {
@@ -88,16 +88,16 @@ mat4 rotate_matrix(vec3 n, float theta)
 }
 
 void getObjects() {
-	for (int i=0;i<50;i++){
-		objects[i] = vec3(-10 + 4*i, -10 + 4*i,  -20 - 4*i);
+	for (int i=0;i<128;i++){
+		objects[i] = vec3(-10 + 8*i, -10 + 8*i,  -50 - 8*i);
 	}
 }
 
 float compute_distances(vec3 ray) 
 {
 	float min_dist = MAX_DIST;
-	for (int obj = 0 ; obj < 50; obj++) {
-		distances[obj] = sdSphere(ray - objects[obj], 2);
+	for (int obj = 0 ; obj < 128; obj++) {
+		distances[obj] = sdSphere(ray - objects[obj], 1);
 		min_dist = min(min_dist, distances[obj]);
 	}
 
@@ -128,7 +128,7 @@ vec3 estimate_normal(vec3 p)
 	// float dy = compute_distance(vec3(p.x, p.y + EPSILON, p.z)) - compute_distance(vec3(p.x, p.y - EPSILON, p.z));
 	// float dz = compute_distance(vec3(p.x, p.y, p.z + EPSILON)) - compute_distance(vec3(p.x, p.y, p.z - EPSILON));
 	// return normaliz
-	e(vec3(dx, dy, dz));
+
 	return vec3(0);
 }
 
@@ -155,23 +155,13 @@ vec4 shade(vec3 E, vec3 N, vec3 L, vec2 st)
 }
 
 float ray_march(vec3 ray_origin, vec3 ray_direction) {
-	
-	float min_distance = compute_distances(ray_origin);
-	if (min_distance < EPSILON) {
-		return 1;
-	}
-	vec3 ray = ray_origin + min_distance * ray_direction;
-	int near = compute_near(ray);
-
-	
-
-	float d = sdSphere(ray - objects[near], 2);
-	ray += d * ray_direction ;
-
-	d = sdSphere(ray - objects[near], 2);
-
-	if (d < EPSILON) {
-		return 1;
+	vec3 ray = ray_origin * ray_direction;
+	for (int i = 0; i < MAX_DIST; i++) {
+		float d = compute_distances(ray);
+		if (d < EPSILON) {
+			return 1;
+		}
+		ray += d * ray_direction;
 	}
 	return -1;
 }
