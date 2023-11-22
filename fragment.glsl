@@ -11,6 +11,8 @@ uniform float time;
 uniform vec2 resolution;
 uniform vec4 light_position;
 uniform vec3 ray_origin;
+uniform sampler2D tex;
+
 
 const float PI = 3.14159265;
 const float HALF_PI = 0.5*PI;
@@ -18,13 +20,12 @@ const float TWO_PI = 2.0*PI;
 const float INV_PI = 1.0/PI;
 const float INV_TWO_PI = 1.0/TWO_PI;
 const float EPSILON = 1.0e-4;
-const int MAX_DIST = 100;
-const int OBJ_COUNT = 256;
+const int MAX_DIST = 128;
+const int OBJ_COUNT = 32;
 
 out vec4 color;
 in vec2 TexCoords;
 
-vec3[OBJ_COUNT] objects;
 float[OBJ_COUNT] distances;
 
 float sdSphere( vec3 p, float s )
@@ -88,40 +89,23 @@ mat4 rotate_matrix(vec3 n, float theta)
 	return m;
 }
 
-void getObjects() {
-	for (int i=0;i<OBJ_COUNT;i++){
-		objects[i] = vec3(-10 + 8*i, -10 + 8*i,  -50 - 8*i);
-	}
-}
 
 float compute_distances(vec3 ray) 
 {
 	float min_dist = MAX_DIST;
+	vec4 object = vec4(0);
+
 	for (int obj = 0 ; obj < OBJ_COUNT; obj++) {
-		distances[obj] = sdSphere(ray - objects[obj], 1);
+		float y = float(obj)/32.0;
+		vec2 st = vec2(0,y);
+		object = texture(tex,st); // Sample the texture
+		distances[obj] = sdSphere(ray - (object.xyz * -255.0), 1);
 		min_dist = min(min_dist, distances[obj]);
 	}
 
 	return min_dist;
 }
 
-int compute_near(vec3 ray) 
-{
-	float max_delta = 0;
-	float delta = 0;
-	int near = 0;
-
-	for (int i = 0 ; i < 50; i++) {
-		delta = sdSphere(ray - objects[i], 2);
-		delta = distances[i] - delta;
-		if (delta > max_delta) {
-			max_delta = delta;
-			near = i;
-		}
-	}
-
-	return near;
-}
 
 vec3 estimate_normal(vec3 p) 
 {
@@ -156,11 +140,14 @@ vec4 shade(vec3 E, vec3 N, vec3 L, vec2 st)
 }
 
 float ray_march(vec3 ray_origin, vec3 ray_direction) {
-	vec3 ray = ray_origin * ray_direction;
-	for (int i = 0; i < MAX_DIST; i++) {
+	vec3 ray = ray_origin + 1.0 * ray_direction;
+	for (int i = 0; i < 32; i++) {
 		float d = compute_distances(ray);
 		if (d < EPSILON) {
 			return 1;
+		}
+		if (d > MAX_DIST) {
+			return -1;
 		}
 		ray += d * ray_direction;
 	}
@@ -172,8 +159,6 @@ void main()
 	float aspect = resolution.y/resolution.x;
 	vec2 uv = 2.0 * TexCoords - 1.0;
 	uv.y = aspect*uv.y;
-
-	getObjects();
 
 	vec3 ray_direction = normalize(vec3(uv - ray_origin.xy, -1.0));
 

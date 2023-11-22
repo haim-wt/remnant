@@ -1,13 +1,8 @@
 package main
 
-/*
-Adapted from this tutorial: http://www.learnopengl.com/#!Getting-started/Shaders
-
-Shows how to pass both position and color as inputs to a shader via a VBO
-*/
-
 import (
 	"log"
+	"math/rand"
 	"runtime"
 	"time"
 
@@ -40,6 +35,7 @@ func main() {
 	glfw.WindowHint(glfw.ContextVersionMinor, 1)
 	glfw.WindowHint(glfw.OpenGLProfile, glfw.OpenGLCoreProfile)
 	glfw.WindowHint(glfw.OpenGLForwardCompatible, glfw.True)
+
 	window, err := glfw.CreateWindow(windowWidth, windowHeight, "basic shaders", nil, nil)
 	if err != nil {
 		panic(err)
@@ -83,23 +79,63 @@ func createTriangleVAO(vertices []float32) uint32 {
 	return vao
 }
 
-func programLoop(window *glfw.Window) error {
-	// the linked shader program determines how the data will be rendered
+func createTexture() uint32 {
+	width, height := 1, 32
+	RND := make([]float32, width*height*4)
+	for i := 0; i < width*height*4; i++ {
+		RND[i] = rand.Float32()
+	}
+	pixels := make([]uint8, width*height*4) // 4 for RGBA
+	for y := 0; y < height; y++ {
+		for x := 0; x < width; x++ {
+			offset := (y*width + x) * 4
+			pixels[offset] = uint8(rand.Intn(256))   // Red
+			pixels[offset+1] = uint8(rand.Intn(256)) // Green
+			pixels[offset+2] = uint8(rand.Intn(256)) // Blue
+			pixels[offset+3] = 255                   // Alpha
+		}
+	}
+
+	var texture uint32
+	gl.GenTextures(1, &texture)
+	gl.BindTexture(gl.TEXTURE_2D, texture)
+
+	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
+	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
+	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST)
+	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST)
+
+	gl.TexImage2D(gl.TEXTURE_2D, 0, gl.RGBA, int32(width), int32(height), 0, gl.RGBA, gl.UNSIGNED_BYTE, gl.Ptr(pixels))
+
+	return texture
+}
+
+func createProgram(vertexShaderSource, fragmentShaderSource string) (*Program, error) {
 	vertShader, err := NewShaderFromFile("vertex.glsl", gl.VERTEX_SHADER)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	fragShader, err := NewShaderFromFile("fragment.glsl", gl.FRAGMENT_SHADER)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	shaderProgram, err := NewProgram(vertShader, fragShader)
 	if err != nil {
+		return nil, err
+	}
+
+	return shaderProgram, nil
+}
+func programLoop(window *glfw.Window) error {
+	// the linked shader program determines how the data will be rendered
+
+	program, err := createProgram("vertex.glsl", "fragment.glsl")
+	if err != nil {
 		return err
 	}
-	defer shaderProgram.Delete()
+	defer program.Delete()
 
 	vertices := []float32{
 		// First Triangle
@@ -115,11 +151,17 @@ func programLoop(window *glfw.Window) error {
 	c := 0.0
 	VAO := createTriangleVAO(vertices)
 
-	prog := shaderProgram.Use()
-	timeLocation := gl.GetUniformLocation(prog, gl.Str("time\x00"))
-	resolutionLocation := gl.GetUniformLocation(prog, gl.Str("resolution\x00"))
-	light_positionLocation := gl.GetUniformLocation(prog, gl.Str("light_position\x00"))
-	origin_position := gl.GetUniformLocation(prog, gl.Str("ray_origin\x00"))
+	progPoiner := program.Use()
+
+	timeLocation := gl.GetUniformLocation(progPoiner, gl.Str("time\x00"))
+	resolutionLocation := gl.GetUniformLocation(progPoiner, gl.Str("resolution\x00"))
+	light_positionLocation := gl.GetUniformLocation(progPoiner, gl.Str("light_position\x00"))
+	origin_position := gl.GetUniformLocation(progPoiner, gl.Str("ray_origin\x00"))
+	texLocation := gl.GetUniformLocation(progPoiner, gl.Str("tex\x00"))
+
+	gl.ActiveTexture(gl.TEXTURE0)
+	texture := createTexture()
+	gl.BindTexture(gl.TEXTURE_2D, texture)
 
 	for !window.ShouldClose() {
 		startTime := time.Now()
@@ -131,8 +173,7 @@ func programLoop(window *glfw.Window) error {
 		gl.Clear(gl.COLOR_BUFFER_BIT)
 
 		// draw loop
-
-		c += 0.01
+		c -= 0.2
 		ro = [3]float32{0, 0, -float32(c)}
 
 		gl.BindVertexArray(VAO)
@@ -143,6 +184,7 @@ func programLoop(window *glfw.Window) error {
 		gl.Uniform2fv(resolutionLocation, 1, &res[0])
 		gl.Uniform4fv(light_positionLocation, 1, &lp[0])
 		gl.Uniform3fv(origin_position, 1, &ro[0])
+		gl.Uniform1i(texLocation, 0)
 
 		window.SwapBuffers()
 
