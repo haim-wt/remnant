@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"math/rand"
 	"runtime"
@@ -21,7 +22,6 @@ func init() {
 	// GLFW event handling must be run on the main OS thread
 	runtime.LockOSThread()
 	res = [2]float32{windowWidth, windowHeight}
-	lp = [3]float32{-0.1, 1.0, 1.2}
 }
 
 func main() {
@@ -55,9 +55,6 @@ func main() {
 	}
 }
 
-/*
- * Creates the Vertex Array Object for a triangle.
- */
 func createTriangleVAO(vertices []float32) uint32 {
 	var vao, vbo uint32
 	gl.GenVertexArrays(1, &vao)
@@ -128,6 +125,7 @@ func createProgram(vertexShaderSource, fragmentShaderSource string) (*Program, e
 
 	return shaderProgram, nil
 }
+
 func programLoop(window *glfw.Window) error {
 	// the linked shader program determines how the data will be rendered
 
@@ -150,7 +148,6 @@ func programLoop(window *glfw.Window) error {
 
 	c := 0.0
 	VAO := createTriangleVAO(vertices)
-
 	progPoiner := program.Use()
 
 	timeLocation := gl.GetUniformLocation(progPoiner, gl.Str("time\x00"))
@@ -159,26 +156,29 @@ func programLoop(window *glfw.Window) error {
 	origin_position := gl.GetUniformLocation(progPoiner, gl.Str("ray_origin\x00"))
 	texLocation := gl.GetUniformLocation(progPoiner, gl.Str("tex\x00"))
 
-	gl.ActiveTexture(gl.TEXTURE0)
 	texture := createTexture()
+	gl.ActiveTexture(gl.TEXTURE0)
 	gl.BindTexture(gl.TEXTURE_2D, texture)
+	gl.ClearColor(0.0, 0.0, 0.0, 1.0)
+
+	timeElapsed := 0.0
+	fps := 0.0
 
 	for !window.ShouldClose() {
-		startTime := time.Now()
 		// poll events and call their registered callbacks
 		glfw.PollEvents()
+		startTime := time.Now()
 
-		// perform rendering
-		gl.ClearColor(0.0, 0.0, 0.0, 1.0)
+		// clear the screen to black
 		gl.Clear(gl.COLOR_BUFFER_BIT)
 
 		// draw loop
-		c -= 0.2
 		ro = [3]float32{0, 0, -float32(c)}
+		lp = [3]float32{0, 100.0, 38}
+		c -= 0.05
 
 		gl.BindVertexArray(VAO)
 		gl.DrawArrays(gl.TRIANGLES, 0, 6) // 6 vertices for two triangles
-		gl.BindVertexArray(0)
 
 		gl.Uniform1f(timeLocation, float32(c))
 		gl.Uniform2fv(resolutionLocation, 1, &res[0])
@@ -188,16 +188,22 @@ func programLoop(window *glfw.Window) error {
 
 		window.SwapBuffers()
 
+		// calculate fps
 		frameTime := time.Since(startTime).Milliseconds()
-		log.Default().Println("Frame time:", frameTime, "ms")
+		fps += 1.0
+
+		timeElapsed += float64(frameTime) / 1000.0
+		if timeElapsed > 1.0 {
+			glfw.GetCurrentContext().SetTitle(fmt.Sprintf("FPS: %.2f", fps))
+			timeElapsed = 0.0
+			fps = 0.0
+		}
 	}
 
 	return nil
 }
 
-func keyCallback(window *glfw.Window, key glfw.Key, scancode int, action glfw.Action,
-	mods glfw.ModifierKey) {
-
+func keyCallback(window *glfw.Window, key glfw.Key, scancode int, action glfw.Action, mods glfw.ModifierKey) {
 	// When a user presses the escape key, we set the WindowShouldClose property to true,
 	// which closes the application
 	if key == glfw.KeyEscape && action == glfw.Press {
