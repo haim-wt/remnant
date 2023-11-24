@@ -1,12 +1,5 @@
 #version 410 core
 
-
-// === fragment shader
-// 
-// reference
-//  * http://www.iquilezles.org/www/articles/raymarchingdf/raymarchingdf.htm
-//  * http://www.iquilezles.org/www/articles/distfunctions/distfunctions.htm
-
 uniform float time;
 uniform vec2 resolution;
 uniform vec4 light_position;
