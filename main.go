@@ -16,22 +16,12 @@ import (
 const windowWidth = 800
 const windowHeight = 600
 
-var camera = &Camera{
-	Pos: mat.NewVecDense(3, []float64{-32, 0, -32}),
-	Dir: mat.NewVecDense(3, []float64{0, 0, 1}),
-	Up:  mat.NewVecDense(3, []float64{0, 1, 0}),
-	FOV: float32(60),
-}
-
-var light = &Light{
-	Position: mat.NewVecDense(3, []float64{0, 64, -64}),
-}
+// Initialization
 
 func init() {
 	// GLFW event handling must be run on the main OS thread
 	runtime.LockOSThread()
 }
-
 func main() {
 	// Create the window
 	window := createGlfwWindow()
@@ -48,26 +38,65 @@ func main() {
 	// Terminate GLFW
 	glfw.Terminate()
 }
-
-func createDataTexture() []uint8 {
-	width, height := 1, 128
-	RND := make([]float32, width*height*4)
-	for i := 0; i < width*height*4; i++ {
-		RND[i] = rand.Float32()
+func initializeOPenGL() {
+	// Initialize OpenGL
+	err := gl.Init()
+	if err != nil {
+		log.Fatalln("failed to initialize OpenGL:", err)
 	}
-	rand.Seed(5)
-	pixels := make([]uint8, width*height*4) // 4 for RGBA
-	for y := 0; y < height; y++ {
-		for x := 0; x < width; x++ {
-			offset := (y*width + x) * 4
-			pixels[offset] = uint8(rand.Intn(256))   // Red
-			pixels[offset+1] = uint8(rand.Intn(256)) // Green
-			pixels[offset+2] = uint8(rand.Intn(256)) // Blue
-			pixels[offset+3] = 255                   // Alpha
-		}
+}
+func createGlfwWindow() *glfw.Window {
+	if err := glfw.Init(); err != nil {
+		panic(fmt.Errorf("could not initialize glfw: %v", err))
 	}
 
-	return pixels
+	// OpenGL version 4.1 Core Profile
+	glfw.WindowHint(glfw.Resizable, glfw.False)
+	glfw.WindowHint(glfw.ContextVersionMajor, 4)
+	glfw.WindowHint(glfw.ContextVersionMinor, 1)
+	glfw.WindowHint(glfw.OpenGLProfile, glfw.OpenGLCoreProfile)
+	glfw.WindowHint(glfw.OpenGLForwardCompatible, glfw.True)
+
+	window, err := glfw.CreateWindow(windowWidth, windowHeight, "basic shaders", nil, nil)
+	if err != nil {
+		panic(fmt.Errorf("could not create opengl renderer: %v", err))
+	}
+
+	window.MakeContextCurrent()
+	window.SetInputMode(glfw.StickyKeysMode, 1)
+	window.SetInputMode(glfw.StickyMouseButtonsMode, 1)
+	window.SetKeyCallback(keyCallback)
+	window.SetCursor(createCursor())
+
+	return window
+}
+func createCursor() *glfw.Cursor {
+	cursorImage := image.NewRGBA(image.Rect(0, 0, 8, 8))
+	for x := 0; x < 8; x++ {
+		cursorImage.Set(x, 0, color.RGBA{255, 255, 255, 255})
+		cursorImage.Set(x, 1, color.RGBA{255, 255, 255, 255})
+		cursorImage.Set(x, 2, color.RGBA{255, 255, 255, 255})
+		cursorImage.Set(x, 3, color.RGBA{255, 255, 255, 255})
+		cursorImage.Set(x, 4, color.RGBA{255, 255, 255, 255})
+		cursorImage.Set(x, 5, color.RGBA{255, 255, 255, 255})
+		cursorImage.Set(x, 6, color.RGBA{255, 255, 255, 255})
+		cursorImage.Set(x, 7, color.RGBA{255, 255, 255, 255})
+	}
+	cursor := glfw.CreateCursor(cursorImage, 4, 4)
+	return cursor
+}
+
+// Game loop
+
+var camera = &Camera{
+	Pos: mat.NewVecDense(3, []float64{-32, 0, -32}),
+	Dir: mat.NewVecDense(3, []float64{0, 0, 1}),
+	Up:  mat.NewVecDense(3, []float64{0, 1, 0}),
+	FOV: float32(60),
+}
+
+var light = &Light{
+	Position: mat.NewVecDense(3, []float64{0, 64, -64}),
 }
 
 func programLoop(window *glfw.Window) error {
@@ -115,69 +144,54 @@ func programLoop(window *glfw.Window) error {
 
 	return nil
 }
-
-func initializeOPenGL() {
-	// Initialize OpenGL
-	err := gl.Init()
-	if err != nil {
-		log.Fatalln("failed to initialize OpenGL:", err)
+func createDataTexture() []uint8 {
+	width, height := 1, 128
+	RND := make([]float32, width*height*4)
+	for i := 0; i < width*height*4; i++ {
+		RND[i] = rand.Float32()
 	}
-}
-func createGlfwWindow() *glfw.Window {
-	if err := glfw.Init(); err != nil {
-		panic(fmt.Errorf("could not initialize glfw: %v", err))
-	}
-
-	// OpenGL version 4.1 Core Profile
-	glfw.WindowHint(glfw.Resizable, glfw.False)
-	glfw.WindowHint(glfw.ContextVersionMajor, 4)
-	glfw.WindowHint(glfw.ContextVersionMinor, 1)
-	glfw.WindowHint(glfw.OpenGLProfile, glfw.OpenGLCoreProfile)
-	glfw.WindowHint(glfw.OpenGLForwardCompatible, glfw.True)
-
-	window, err := glfw.CreateWindow(windowWidth, windowHeight, "basic shaders", nil, nil)
-	if err != nil {
-		panic(fmt.Errorf("could not create opengl renderer: %v", err))
+	rand.Seed(5)
+	pixels := make([]uint8, width*height*4) // 4 for RGBA
+	for y := 0; y < height; y++ {
+		for x := 0; x < width; x++ {
+			offset := (y*width + x) * 4
+			pixels[offset] = uint8(rand.Intn(256))   // Red
+			pixels[offset+1] = uint8(rand.Intn(256)) // Green
+			pixels[offset+2] = uint8(rand.Intn(256)) // Blue
+			pixels[offset+3] = 255                   // Alpha
+		}
 	}
 
-	window.MakeContextCurrent()
-	window.SetInputMode(glfw.StickyMouseButtonsMode, 1)
-	window.SetKeyCallback(keyCallback)
-	window.SetCursor(createCursor())
-
-	return window
-}
-func createCursor() *glfw.Cursor {
-	cursorImage := image.NewRGBA(image.Rect(0, 0, 8, 8))
-	for x := 0; x < 8; x++ {
-		cursorImage.Set(x, 0, color.RGBA{255, 255, 255, 255})
-		cursorImage.Set(x, 1, color.RGBA{255, 255, 255, 255})
-		cursorImage.Set(x, 2, color.RGBA{255, 255, 255, 255})
-		cursorImage.Set(x, 3, color.RGBA{255, 255, 255, 255})
-		cursorImage.Set(x, 4, color.RGBA{255, 255, 255, 255})
-		cursorImage.Set(x, 5, color.RGBA{255, 255, 255, 255})
-		cursorImage.Set(x, 6, color.RGBA{255, 255, 255, 255})
-		cursorImage.Set(x, 7, color.RGBA{255, 255, 255, 255})
-	}
-	cursor := glfw.CreateCursor(cursorImage, 4, 4)
-	return cursor
+	return pixels
 }
 func keyCallback(window *glfw.Window, key glfw.Key, scancode int, action glfw.Action, mods glfw.ModifierKey) {
-	window.SetInputMode(glfw.StickyKeysMode, 1)
 
-	// if key == glfw.KeyW && action == glfw.Press {
-	// 	cameraPos[2] -= 1
-	// }
-	// if key == glfw.KeyS && action == glfw.Press {
-	// 	cameraPos[2] += 1
-	// }
-	// if key == glfw.KeyA && action == glfw.Press {
-	// 	cameraPos[0] -= 0.1
-	// }
-	// if key == glfw.KeyD && action == glfw.Press {
-	// 	cameraPos[0] += 0.1
-	// }
-	// if key == glfw.KeyEscape && action == glfw.Press {
-	// 	window.SetShouldClose(true)
-	// }
+	right := mat.NewVecDense(3, []float64{1, 0, 0})
+	up := mat.NewVecDense(3, []float64{0, 1, 0})
+	forward := mat.NewVecDense(3, []float64{0, 0, 1})
+
+	if key == glfw.KeyW && action == glfw.Press {
+		camera.Pos.AddVec(camera.Pos, forward)
+	}
+	if key == glfw.KeyS && action == glfw.Press {
+		camera.Pos.SubVec(camera.Pos, forward)
+	}
+
+	if key == glfw.KeySpace && action == glfw.Press {
+		camera.Pos.AddVec(camera.Pos, up)
+	}
+	if key == glfw.KeyC && action == glfw.Press {
+		camera.Pos.SubVec(camera.Pos, up)
+	}
+
+	if key == glfw.KeyD && action == glfw.Press {
+		camera.Pos.AddVec(camera.Pos, right)
+	}
+	if key == glfw.KeyA && action == glfw.Press {
+		camera.Pos.SubVec(camera.Pos, right)
+	}
+
+	if key == glfw.KeyEscape && action == glfw.Press {
+		window.SetShouldClose(true)
+	}
 }
