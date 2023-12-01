@@ -1,6 +1,8 @@
-github.com/cstegel/opengl-samples-golang v0.0.0-20180607031111-1ed56cc6485a h1:c9P67Gei74Cfp+CCMYT43Uk2IKk+CGnqSgUlhWO6958=
-github.com/cstegel/opengl-samples-golang v0.0.0-20180607031111-1ed56cc6485a/go.mod h1:pbMYrjR0RjVmWmrh5UXzPTi5uERJ3GskCS2E2hLzYl8=
 github.com/go-gl/gl v0.0.0-20231021071112-07e5d0ea2e71 h1:5BVwOaUSBTlVZowGO6VZGw2H/zl9nrd3eCZfYV+NfQA=
 github.com/go-gl/gl v0.0.0-20231021071112-07e5d0ea2e71/go.mod h1:9YTyiznxEY1fVinfM7RvRcjRHbw2xLBJ3AAGIT0I4Nw=
 github.com/go-gl/glfw/v3.3/glfw v0.0.0-20231117230948-b8b00452e321 h1:YZupvqQgGJlwN5cu1S0Jhxkrd9oPP9YHPub2sJvQXSw=
 github.com/go-gl/glfw/v3.3/glfw v0.0.0-20231117230948-b8b00452e321/go.mod h1:tQ2UAYgL5IevRw8kRxooKSPJfGvJ9fJQFa0TUsXzTg8=
+golang.org/x/exp v0.0.0-20231127185646-65229373498e h1:Gvh4YaCaXNs6dKTlfgismwWZKyjVZXwOPfIyUaqU3No=
+golang.org/x/exp v0.0.0-20231127185646-65229373498e/go.mod h1:iRJReGqOEeBhDZGkGbynYwcHlctCvnjTYIamk7uXpHI=
+gonum.org/v1/gonum v0.14.0 h1:2NiG67LD1tEH0D7kM+ps2V+fXmsAnpUeec7n8tcr4S0=
+gonum.org/v1/gonum v0.14.0/go.mod h1:AoWeoz0becf9QMWtE8iWXNXc27fK4fNeHNf/oMejGfU=
