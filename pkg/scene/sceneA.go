@@ -138,7 +138,7 @@ func (m *SceneA) KeyCallback(window *glfw.Window, key glfw.Key, scancode int, ac
 }
 
 func createDataTexture() []uint8 {
-	width, height := 1, 128
+	width, height := 1, 32
 	RND := make([]float32, width*height*4)
 	for i := 0; i < width*height*4; i++ {
 		RND[i] = rand.Float32()

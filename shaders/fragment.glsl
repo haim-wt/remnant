@@ -14,7 +14,7 @@ const float PI = 3.14159265;
 const float RADIAN = PI / 180.0;
 const float EPSILON = 1.0e-3;
 const int MAX_DIST = 512;
-const int OBJ_COUNT = 128;
+const int OBJ_COUNT = 32;
 const int MAX_STEPS = 64;
 const float factor = 1.0 / float(OBJ_COUNT);
 
