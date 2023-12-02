@@ -18,7 +18,7 @@ func NewScene() *Scene {
 			Pos: mat.NewVecDense(3, []float64{-32, 0, -32}),
 			Dir: mat.NewVecDense(3, []float64{0, 0, 1}),
 			Up:  mat.NewVecDense(3, []float64{0, 1, 0}),
-			FOV: float32(60),
+			FOV: float32(90),
 		},
 	}
 }

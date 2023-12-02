@@ -97,7 +97,7 @@ void main() {
     float fovFactor = tan(camera_fov * 0.5 * RADIAN);
     vec3 forward = normalize(camera_direction);
     vec3 right = normalize(cross(camera_up, forward));
-    vec3 up = normalize(cross(forward, right));
+    vec3 up = camera_up; //normalize(cross(forward, right));
 
 
     vec3 ray_direction = normalize(forward + fovFactor * uv.x * right + fovFactor * uv.y * up);

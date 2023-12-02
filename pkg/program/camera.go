@@ -18,10 +18,10 @@ func (c *Camera) Rotate(xRad, yRad float64) {
 	qx := physics.CreateRotationQuaternion(xRad, mat.NewVecDense(3, []float64{0, 1, 0}))
 	qy := physics.CreateRotationQuaternion(yRad, mat.NewVecDense(3, []float64{1, 0, 0}))
 
-	combinedRotation := quat.Mul(qy, qx)
+	rotatedVec := physics.RotateVectorByQuaternion(c.Dir, qy)
+	rotatedVec = physics.RotateVectorByQuaternion(rotatedVec, qx)
 
-	// Rotate the camera vectors
-	rotatedVec := physics.RotateVectorByQuaternion(c.Dir, combinedRotation)
+	combinedRotation := quat.Mul(qy, qx)
 	rotatedUp := physics.RotateVectorByQuaternion(c.Up, combinedRotation)
 
 	c.Dir = rotatedVec
