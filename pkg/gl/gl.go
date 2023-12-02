@@ -1,4 +1,4 @@
-package glprogram
+package gl
 
 import (
 	"fmt"

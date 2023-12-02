@@ -1,7 +1,7 @@
 package program
 
 import (
-	glprogram "remnant/gl"
+	glprogram "remnant/pkg/gl"
 
 	"github.com/go-gl/gl/v4.1-core/gl"
 )

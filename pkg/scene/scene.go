@@ -1,26 +1,12 @@
-package scenes
+package scene
 
 import (
-	"remnant/pkg/program"
-
-	"gonum.org/v1/gonum/mat"
+	"github.com/go-gl/glfw/v3.3/glfw"
 )
 
-type Scene struct {
-	Light  *program.Light
-	Camera *program.Camera
-}
-
-func NewScene() *Scene {
-	return &Scene{
-		Light: &program.Light{
-			Position: mat.NewVecDense(3, []float64{0, 64, -64}),
-		},
-		Camera: &program.Camera{
-			Pos: mat.NewVecDense(3, []float64{-32, 0, -32}),
-			Dir: mat.NewVecDense(3, []float64{0, 0, 1}),
-			Up:  mat.NewVecDense(3, []float64{0, 1, 0}),
-			FOV: float32(60),
-		},
-	}
+type Scene interface {
+	Render(window *glfw.Window) error
+	KeyCallback(window *glfw.Window, key glfw.Key, scancode int, action glfw.Action, mods glfw.ModifierKey)
+	MouseButtonCallback(window *glfw.Window, button glfw.MouseButton, action glfw.Action, mods glfw.ModifierKey)
+	MousePositionCallback(window *glfw.Window, xpos float64, ypos float64)
 }

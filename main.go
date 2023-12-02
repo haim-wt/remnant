@@ -2,9 +2,9 @@ package main
 
 import (
 	"fmt"
-	"image"
-	"image/color"
 	"log"
+	"remnant/internal/controller"
+	"remnant/pkg/game"
 	scenes "remnant/pkg/scene"
 	"runtime"
 
@@ -28,10 +28,13 @@ func main() {
 	window := createGlfwWindow()
 
 	// Initialize OpenGL
-	initializeOPenGL()
+	initializeOpenGL()
 
-	// Run the program loop
-	err := scenes.SceneA(window)
+	// Run the Game
+	gameController := controller.NewGameController(windowWidth, windowHeight)
+	game := game.NewGame(window, gameController)
+	scene := scenes.NewSceneA(gameController)
+	err := game.LoadScene(scene)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -40,7 +43,7 @@ func main() {
 	glfw.Terminate()
 }
 
-func initializeOPenGL() {
+func initializeOpenGL() {
 	// Initialize OpenGL
 	err := gl.Init()
 	if err != nil {
@@ -59,31 +62,10 @@ func createGlfwWindow() *glfw.Window {
 	glfw.WindowHint(glfw.OpenGLProfile, glfw.OpenGLCoreProfile)
 	glfw.WindowHint(glfw.OpenGLForwardCompatible, glfw.True)
 
-	window, err := glfw.CreateWindow(windowWidth, windowHeight, "basic shaders", nil, nil)
+	window, err := glfw.CreateWindow(windowWidth, windowHeight, "Remnant", nil, nil)
 	if err != nil {
 		panic(fmt.Errorf("could not create opengl renderer: %v", err))
 	}
 
-	window.MakeContextCurrent()
-	window.SetInputMode(glfw.StickyKeysMode, 1)
-	window.SetInputMode(glfw.StickyMouseButtonsMode, 1)
-	window.SetKeyCallback(scenes.KeyCallback)
-	window.SetCursor(createCursor())
-
 	return window
-}
-func createCursor() *glfw.Cursor {
-	cursorImage := image.NewRGBA(image.Rect(0, 0, 8, 8))
-	for x := 0; x < 8; x++ {
-		cursorImage.Set(x, 0, color.RGBA{255, 255, 255, 255})
-		cursorImage.Set(x, 1, color.RGBA{255, 255, 255, 255})
-		cursorImage.Set(x, 2, color.RGBA{255, 255, 255, 255})
-		cursorImage.Set(x, 3, color.RGBA{255, 255, 255, 255})
-		cursorImage.Set(x, 4, color.RGBA{255, 255, 255, 255})
-		cursorImage.Set(x, 5, color.RGBA{255, 255, 255, 255})
-		cursorImage.Set(x, 6, color.RGBA{255, 255, 255, 255})
-		cursorImage.Set(x, 7, color.RGBA{255, 255, 255, 255})
-	}
-	cursor := glfw.CreateCursor(cursorImage, 4, 4)
-	return cursor
 }
