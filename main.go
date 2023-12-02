@@ -5,16 +5,17 @@ import (
 	"image"
 	"image/color"
 	"log"
-	"math/rand"
+	scenes "remnant/pkg/scene"
 	"runtime"
 
 	"github.com/go-gl/gl/v4.1-core/gl"
 	"github.com/go-gl/glfw/v3.3/glfw"
-	"gonum.org/v1/gonum/mat"
 )
 
-const windowWidth = 800
-const windowHeight = 600
+const (
+	windowWidth  = 800
+	windowHeight = 450
+)
 
 // Initialization
 
@@ -30,7 +31,7 @@ func main() {
 	initializeOPenGL()
 
 	// Run the program loop
-	err := programLoop(window)
+	err := scenes.SceneA(window)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -38,6 +39,7 @@ func main() {
 	// Terminate GLFW
 	glfw.Terminate()
 }
+
 func initializeOPenGL() {
 	// Initialize OpenGL
 	err := gl.Init()
@@ -65,7 +67,7 @@ func createGlfwWindow() *glfw.Window {
 	window.MakeContextCurrent()
 	window.SetInputMode(glfw.StickyKeysMode, 1)
 	window.SetInputMode(glfw.StickyMouseButtonsMode, 1)
-	window.SetKeyCallback(keyCallback)
+	window.SetKeyCallback(scenes.KeyCallback)
 	window.SetCursor(createCursor())
 
 	return window
@@ -84,114 +86,4 @@ func createCursor() *glfw.Cursor {
 	}
 	cursor := glfw.CreateCursor(cursorImage, 4, 4)
 	return cursor
-}
-
-// Game loop
-
-var camera = &Camera{
-	Pos: mat.NewVecDense(3, []float64{-32, 0, -32}),
-	Dir: mat.NewVecDense(3, []float64{0, 0, 1}),
-	Up:  mat.NewVecDense(3, []float64{0, 1, 0}),
-	FOV: float32(60),
-}
-
-var light = &Light{
-	Position: mat.NewVecDense(3, []float64{0, 64, -64}),
-}
-
-func programLoop(window *glfw.Window) error {
-	// Create the shader program
-	program := NewProgram()
-	defer program.Delete()
-
-	// Load the texture data to the GPU
-	data := program.SetObjectsTextureData(createDataTexture())
-
-	// Set the clear color to black
-	program.SetClearColor(0.0, 0.0, 0.0, 1.0)
-
-	// Statistics
-	timeElapsed := 0.0
-	fps := 0.0
-
-	for !window.ShouldClose() {
-		// CPU Events
-		glfw.PollEvents()
-
-		// Clear the screen
-		program.Clear()
-
-		// Update the shader uniforms
-		program.SetTime(float32(timeElapsed))
-		program.SetResolution(windowWidth, windowHeight)
-		program.SetData(data)
-		program.SetLight(light)
-		program.SetCamera(camera)
-
-		// Draw
-		program.Draw()
-
-		// Swap the buffers
-		window.SwapBuffers()
-
-		fps += 1.0
-		if glfw.GetTime() >= 1.0 {
-			window.SetTitle(fmt.Sprintf("FPS: %.2f", fps))
-			glfw.SetTime(0.0)
-			fps = 0.0
-		}
-	}
-
-	return nil
-}
-func createDataTexture() []uint8 {
-	width, height := 1, 128
-	RND := make([]float32, width*height*4)
-	for i := 0; i < width*height*4; i++ {
-		RND[i] = rand.Float32()
-	}
-	rand.Seed(5)
-	pixels := make([]uint8, width*height*4) // 4 for RGBA
-	for y := 0; y < height; y++ {
-		for x := 0; x < width; x++ {
-			offset := (y*width + x) * 4
-			pixels[offset] = uint8(rand.Intn(256))   // Red
-			pixels[offset+1] = uint8(rand.Intn(256)) // Green
-			pixels[offset+2] = uint8(rand.Intn(256)) // Blue
-			pixels[offset+3] = 255                   // Alpha
-		}
-	}
-
-	return pixels
-}
-func keyCallback(window *glfw.Window, key glfw.Key, scancode int, action glfw.Action, mods glfw.ModifierKey) {
-
-	right := mat.NewVecDense(3, []float64{1, 0, 0})
-	up := mat.NewVecDense(3, []float64{0, 1, 0})
-	forward := mat.NewVecDense(3, []float64{0, 0, 1})
-
-	if key == glfw.KeyW && action == glfw.Press {
-		camera.Pos.AddVec(camera.Pos, forward)
-	}
-	if key == glfw.KeyS && action == glfw.Press {
-		camera.Pos.SubVec(camera.Pos, forward)
-	}
-
-	if key == glfw.KeySpace && action == glfw.Press {
-		camera.Pos.AddVec(camera.Pos, up)
-	}
-	if key == glfw.KeyC && action == glfw.Press {
-		camera.Pos.SubVec(camera.Pos, up)
-	}
-
-	if key == glfw.KeyD && action == glfw.Press {
-		camera.Pos.AddVec(camera.Pos, right)
-	}
-	if key == glfw.KeyA && action == glfw.Press {
-		camera.Pos.SubVec(camera.Pos, right)
-	}
-
-	if key == glfw.KeyEscape && action == glfw.Press {
-		window.SetShouldClose(true)
-	}
 }
