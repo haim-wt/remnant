@@ -4,31 +4,46 @@ import (
 	"fmt"
 	"math/rand"
 	"remnant/internal/controller"
+	"remnant/pkg/input"
 	"remnant/pkg/program"
+	"remnant/pkg/ship"
 
 	"github.com/go-gl/glfw/v3.3/glfw"
 	"gonum.org/v1/gonum/mat"
 )
 
+var deltaTime = 0.0
+
 type SceneA struct {
 	*controller.GameController
 	Camera *program.Camera
 	Light  *program.Light
+	Ship   *ship.Ship
 }
 
 func NewSceneA(ctr *controller.GameController) *SceneA {
-	return &SceneA{
+	sceneA := &SceneA{
 		GameController: ctr,
-		Light: &program.Light{
-			Position: mat.NewVecDense(3, []float64{0, 64, -64}),
-		},
-		Camera: &program.Camera{
-			Pos: mat.NewVecDense(3, []float64{-32, 0, -32}),
-			Dir: mat.NewVecDense(3, []float64{0, 0, 1}),
-			Up:  mat.NewVecDense(3, []float64{0, 1, 0}),
-			FOV: float32(90),
-		},
+		Light:          program.NewLight(mat.NewVecDense(3, []float64{500, 1000, 300})),
+		Camera:         program.NewCamera(mat.NewVecDense(3, []float64{0, 64, -64}), 90),
+		Ship:           ship.NewShip(mat.NewVecDense(3, []float64{0, 64, -64})),
 	}
+
+	sceneA.Ship.Movement = &ship.Movement{
+		Forward:  input.NewKey(glfw.KeyW),
+		Backward: input.NewKey(glfw.KeyS),
+
+		Up:   input.NewKey(glfw.KeySpace),
+		Down: input.NewKey(glfw.KeyLeftControl),
+
+		Right: input.NewKey(glfw.KeyD),
+		Left:  input.NewKey(glfw.KeyA),
+
+		RollLeft:  input.NewKey(glfw.KeyQ),
+		RollRight: input.NewKey(glfw.KeyE),
+	}
+
+	return sceneA
 }
 
 func (scene *SceneA) Render(window *glfw.Window) error {
@@ -46,19 +61,27 @@ func (scene *SceneA) Render(window *glfw.Window) error {
 	window.SetCursorPos(float64(scene.GameController.ScreenWidth)/2, float64(scene.GameController.ScreenHeight)/2)
 
 	// Statistics
-	timeElapsed := 0.0
+	seconds := 0.0
 	fps := 0.0
 
 	w, h := window.GetSize()
 	for !window.ShouldClose() {
+
 		// CPU Events
 		glfw.PollEvents()
 
+		movement, roll := scene.Ship.Movement.UpdateMovement(window, scene.Camera.Dir, scene.Camera.Up)
+		scene.Ship.ApplyForce(movement)
+
+		scene.Ship.Update(deltaTime * 2)
+		scene.Camera.Pos.CopyVec(scene.Ship.Position)
+
+		scene.Camera.RotateZ(roll)
 		// Clear the screen
 		program.Clear()
 
 		// Update the shader uniforms
-		program.SetTime(float32(timeElapsed))
+		program.SetTime(float32(seconds))
 		program.SetResolution(w, h)
 		program.SetData(data)
 		program.SetLight(scene.Light)
@@ -71,11 +94,14 @@ func (scene *SceneA) Render(window *glfw.Window) error {
 		window.SwapBuffers()
 
 		fps += 1.0
-		if glfw.GetTime() >= 1.0 {
+		deltaTime = glfw.GetTime()
+		seconds += deltaTime
+		if seconds >= 1.0 {
 			window.SetTitle(fmt.Sprintf("FPS: %.2f", fps))
-			glfw.SetTime(0.0)
+			seconds = 0
 			fps = 0.0
 		}
+		glfw.SetTime(0.0)
 	}
 
 	return nil
@@ -99,6 +125,7 @@ func (m *SceneA) MousePositionCallback(window *glfw.Window, xpos float64, ypos f
 	mouseX, mouseY := xpos/float64(m.GameController.ScreenWidth), ypos/float64(m.GameController.ScreenHeight)
 	mouseX = mouseX*2 - 1
 	mouseY = (mouseY*2 - 1)
+	fmt.Println(mouseX, mouseY)
 
 	// rotate the camera based on mouse movement
 	m.Camera.Rotate(mouseX, mouseY)
@@ -106,39 +133,8 @@ func (m *SceneA) MousePositionCallback(window *glfw.Window, xpos float64, ypos f
 	window.SetCursorPos(float64(m.GameController.ScreenWidth)/2, float64(m.GameController.ScreenHeight)/2)
 }
 
-func (m *SceneA) KeyCallback(window *glfw.Window, key glfw.Key, scancode int, action glfw.Action, mods glfw.ModifierKey) {
-	right := mat.NewVecDense(3, []float64{1, 0, 0})
-	up := mat.NewVecDense(3, []float64{0, 1, 0})
-	forward := mat.NewVecDense(3, []float64{0, 0, 1})
-
-	if key == glfw.KeyW && action == glfw.Press {
-		m.Camera.Pos.AddVec(m.Camera.Pos, forward)
-	}
-	if key == glfw.KeyS && action == glfw.Press {
-		m.Camera.Pos.SubVec(m.Camera.Pos, forward)
-	}
-
-	if key == glfw.KeySpace && action == glfw.Press {
-		m.Camera.Pos.AddVec(m.Camera.Pos, up)
-	}
-	if key == glfw.KeyC && action == glfw.Press {
-		m.Camera.Pos.SubVec(m.Camera.Pos, up)
-	}
-
-	if key == glfw.KeyD && action == glfw.Press {
-		m.Camera.Pos.AddVec(m.Camera.Pos, right)
-	}
-	if key == glfw.KeyA && action == glfw.Press {
-		m.Camera.Pos.SubVec(m.Camera.Pos, right)
-	}
-
-	if key == glfw.KeyEscape && action == glfw.Press {
-		window.SetShouldClose(true)
-	}
-}
-
 func createDataTexture() []uint8 {
-	width, height := 1, 32
+	width, height := 1, 64
 	RND := make([]float32, width*height*4)
 	for i := 0; i < width*height*4; i++ {
 		RND[i] = rand.Float32()
@@ -151,10 +147,10 @@ func createDataTexture() []uint8 {
 	for y := 0; y < height; y++ {
 		for x := 0; x < width; x++ {
 			offset := (y*width + x) * 4
-			pixels[offset] = uint8(r.Intn(256))   // Red
-			pixels[offset+1] = uint8(r.Intn(256)) // Green
-			pixels[offset+2] = uint8(r.Intn(256)) // Blue
-			pixels[offset+3] = 255                // Alpha
+			pixels[offset] = uint8(r.Intn(64))   // Red
+			pixels[offset+1] = uint8(r.Intn(64)) // Green
+			pixels[offset+2] = uint8(r.Intn(64)) // Blue
+			pixels[offset+3] = 255               // Alpha
 		}
 	}
 

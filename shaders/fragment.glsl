@@ -12,10 +12,10 @@ uniform float camera_fov;
 
 const float PI = 3.14159265;
 const float RADIAN = PI / 180.0;
-const float EPSILON = 1.0e-3;
-const int MAX_DIST = 512;
-const int OBJ_COUNT = 32;
-const int MAX_STEPS = 64;
+const float EPSILON = 1.0e-4;
+const int MAX_DIST = 1024;
+const int OBJ_COUNT = 64;
+const int MAX_STEPS = 128;
 const float factor = 1.0 / float(OBJ_COUNT);
 
 out vec4 color;
@@ -41,7 +41,7 @@ float compute_distance(vec3 ray) {
         st = vec2(0.0, y * factor);
         object = texture(tex, st); // Sample the texture
 		pos = (object.xyz * -255.0) + 127.0;
-		d = sdSphere(ray - pos, 5);
+		d = sdSphere(ray - pos, y % 8);
         min_dist = min(min_dist, d);
     }
 
@@ -97,7 +97,7 @@ void main() {
     float fovFactor = tan(camera_fov * 0.5 * RADIAN);
     vec3 forward = normalize(camera_direction);
     vec3 right = normalize(cross(camera_up, forward));
-    vec3 up = camera_up; //normalize(cross(forward, right));
+    vec3 up = normalize(cross(forward, right));
 
 
     vec3 ray_direction = normalize(forward + fovFactor * uv.x * right + fovFactor * uv.y * up);
@@ -113,7 +113,7 @@ void main() {
         vec3 col = vec3(0.8549, 0.5843, 0.5843) * dif * vec3(0.7); // Simple color multiplication for demonstration
 
         // fog
-        float fogFactor = 1.0 - exp(-0.0001 * distance * distance);
+        float fogFactor = 1.0 - exp(-0.00001 * distance );
         col = mix(col, vec3(0.1), fogFactor); // Simple linear interpolation for fog effect
         color = vec4(col, 1.0);
     } else {

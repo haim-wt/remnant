@@ -7,3 +7,9 @@ import (
 type Light struct {
 	Position *mat.VecDense
 }
+
+func NewLight(direction *mat.VecDense) *Light {
+	return &Light{
+		Position: direction,
+	}
+}

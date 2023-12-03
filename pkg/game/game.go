@@ -25,10 +25,15 @@ func NewGame(window *glfw.Window, ctr *controller.GameController) *Game {
 }
 
 func (g *Game) LoadScene(scene scene.Scene) error {
-	g.Window.SetKeyCallback(scene.KeyCallback)
 	g.Window.SetInputMode(glfw.CursorMode, glfw.CursorDisabled)
 	g.Window.SetMouseButtonCallback(scene.MouseButtonCallback)
 	g.Window.SetCursorPosCallback(scene.MousePositionCallback)
+	g.Window.SetKeyCallback(func(w *glfw.Window, key glfw.Key, scancode int, action glfw.Action, mods glfw.ModifierKey) {
+		if key == glfw.KeyEscape && action == glfw.Press {
+			g.Window.SetShouldClose(true)
+		}
+		g.IsReady = true
+	})
 	return scene.Render(g.Window)
 }
 
