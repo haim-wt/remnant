@@ -18,7 +18,7 @@ type RigidBody struct {
 
 func NewRigidBody(position *mat.VecDense) *RigidBody {
 	return &RigidBody{
-		Position:     mat.NewVecDense(3, []float64{0, 156, 0}),
+		Position:     position,
 		Velocity:     mat.NewVecDense(3, []float64{0, 0, 0}),
 		Direction:    mat.NewVecDense(3, []float64{0, 0, 0}),
 		Rotation:     mat.NewVecDense(3, []float64{0, 0, 0}),

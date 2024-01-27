@@ -15,21 +15,21 @@ import (
 var deltaTime = 0.0
 
 type SceneA struct {
-	*controller.GameController
-	Camera *program.Camera
-	Light  *program.Light
-	Ship   *ship.Ship
+	*controller.Controller
+	camera *program.Camera
+	light  *program.Light
+	ship   *ship.Ship
 }
 
-func NewSceneA(ctr *controller.GameController) *SceneA {
+func NewSceneA(ctr *controller.Controller) *SceneA {
 	sceneA := &SceneA{
-		GameController: ctr,
-		Light:          program.NewLight(mat.NewVecDense(3, []float64{500, 1000, 300})),
-		Camera:         program.NewCamera(mat.NewVecDense(3, []float64{0, 64, -64}), 90),
-		Ship:           ship.NewShip(mat.NewVecDense(3, []float64{0, 64, -64})),
+		Controller: ctr,
+		light:      program.NewLight(mat.NewVecDense(3, []float64{0, 1000, 1000})),
+		camera:     program.NewCamera(mat.NewVecDense(3, []float64{0, 128, 64}), 90),
+		ship:       ship.NewShip(mat.NewVecDense(3, []float64{0, 128, 64})),
 	}
 
-	sceneA.Ship.Movement = &ship.Movement{
+	sceneA.ship.Movement = &ship.Movement{
 		Forward:  input.NewKey(glfw.KeyW),
 		Backward: input.NewKey(glfw.KeyS),
 
@@ -73,7 +73,7 @@ func (scene *SceneA) Render(window *glfw.Window) error {
 		movement, roll := scene.Ship.Movement.UpdateMovement(window, scene.Camera.Dir, scene.Camera.Up)
 		scene.Ship.ApplyForce(movement)
 
-		scene.Ship.Update(deltaTime * 9.8)
+		scene.Ship.Update(deltaTime * 2)
 		scene.Camera.Pos.CopyVec(scene.Ship.Position)
 
 		scene.Camera.RotateZ(roll)
@@ -122,18 +122,18 @@ func (m *SceneA) MouseButtonCallback(window *glfw.Window, button glfw.MouseButto
 }
 
 func (m *SceneA) MousePositionCallback(window *glfw.Window, xpos float64, ypos float64) {
-	mouseX, mouseY := xpos/float64(m.GameController.ScreenWidth), ypos/float64(m.GameController.ScreenHeight)
+	mouseX, mouseY := xpos/float64(m.Controller.ScreenWidth), ypos/float64(m.Controller.ScreenHeight)
 	mouseX = mouseX*2 - 1
 	mouseY = (mouseY*2 - 1)
 	fmt.Println(mouseX, mouseY)
 
 	// rotate the camera based on mouse movement
-	m.Camera.Rotate(mouseX, mouseY)
+	m.camera.Rotate(mouseX, mouseY)
 
-	window.SetCursorPos(float64(m.GameController.ScreenWidth)/2, float64(m.GameController.ScreenHeight)/2)
+	window.SetCursorPos(float64(m.Controller.ScreenWidth)/2, float64(m.Controller.ScreenHeight)/2)
 }
 
-func createDataTexture() []uint8 {
+func (m *SceneA) CreateDataTexture() []uint8 {
 	width, height := 1, 64
 	RND := make([]float32, width*height*4)
 	for i := 0; i < width*height*4; i++ {
@@ -155,4 +155,12 @@ func createDataTexture() []uint8 {
 	}
 
 	return pixels
+}
+
+func (m *SceneA) Lights() *program.Light {
+	return m.light
+}
+
+func (m *SceneA) Camera() *program.Camera {
+	return m.camera
 }

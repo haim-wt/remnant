@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"log"
-	"remnant/internal/controller"
 	"remnant/pkg/game"
 	"remnant/pkg/scene"
 	"runtime"
@@ -13,8 +12,8 @@ import (
 )
 
 const (
-	windowWidth  = 800 * 2
-	windowHeight = 450 * 2
+	windowWidth  = 800
+	windowHeight = 450
 )
 
 // Initialization
@@ -50,11 +49,16 @@ func main() {
 	}
 
 	// Run the Game
-	gameController := controller.NewGameController(windowWidth, windowHeight)
-	game := game.NewGame(window, gameController)
-	scene := scene.NewSceneA(gameController)
+	game := game.NewGame(window)
 
-	err = game.LoadScene(scene)
+	scene := scene.NewSceneB(game.Controller)
+
+	err = game.Load(scene)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	err = game.Run(window, scene)
 	if err != nil {
 		log.Fatal(err)
 	}

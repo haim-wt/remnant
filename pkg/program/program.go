@@ -4,6 +4,7 @@ import (
 	glprogram "remnant/pkg/gl"
 
 	"github.com/go-gl/gl/v4.1-core/gl"
+	"github.com/go-gl/glfw/v3.3/glfw"
 )
 
 const (
@@ -19,8 +20,9 @@ const (
 
 type Program struct {
 	GLProgram *glprogram.GLProgram
-	VAO       uint32
+	Window    *glfw.Window
 
+	VAO        uint32
 	time       int32
 	cameraPos  int32
 	cameraDir  int32
@@ -42,7 +44,7 @@ var vertices = []float32{
 	-1.0, 1.0, 0.0, 0.0, 1.0, // Top Left
 }
 
-func NewProgram() *Program {
+func NewProgram(windows *glfw.Window) *Program {
 	program, err := glprogram.CreateGLProgram()
 	if err != nil {
 		panic(err)
@@ -50,15 +52,16 @@ func NewProgram() *Program {
 
 	s := &Program{
 		GLProgram:  program,
+		Window:     windows,
 		VAO:        createTriangleVAO(vertices),
-		time:       gl.GetUniformLocation(program.Pointer, gl.Str(TIME_UNFOIRM_NAME)),
-		cameraPos:  gl.GetUniformLocation(program.Pointer, gl.Str(CAMERA_POS_UNIFORM_NAME)),
-		cameraDir:  gl.GetUniformLocation(program.Pointer, gl.Str(CAMERA_DIR_UNIFORM_NAME)),
-		cameraUp:   gl.GetUniformLocation(program.Pointer, gl.Str(CAMERA_UP_UNIFORM_NAME)),
-		cameraFOV:  gl.GetUniformLocation(program.Pointer, gl.Str(CAMERA_FOV_UNIFORM_NAME)),
-		lightPos:   gl.GetUniformLocation(program.Pointer, gl.Str(LIGHT_POS_UNIFORM_NAME)),
-		resolution: gl.GetUniformLocation(program.Pointer, gl.Str(RESOLUTION_UNIFORM_NAME)),
-		texture:    gl.GetUniformLocation(program.Pointer, gl.Str(DATA_UNIFORM_NAME)),
+		time:       gl.GetUniformLocation(program.Handle, gl.Str(TIME_UNFOIRM_NAME)),
+		cameraPos:  gl.GetUniformLocation(program.Handle, gl.Str(CAMERA_POS_UNIFORM_NAME)),
+		cameraDir:  gl.GetUniformLocation(program.Handle, gl.Str(CAMERA_DIR_UNIFORM_NAME)),
+		cameraUp:   gl.GetUniformLocation(program.Handle, gl.Str(CAMERA_UP_UNIFORM_NAME)),
+		cameraFOV:  gl.GetUniformLocation(program.Handle, gl.Str(CAMERA_FOV_UNIFORM_NAME)),
+		lightPos:   gl.GetUniformLocation(program.Handle, gl.Str(LIGHT_POS_UNIFORM_NAME)),
+		resolution: gl.GetUniformLocation(program.Handle, gl.Str(RESOLUTION_UNIFORM_NAME)),
+		texture:    gl.GetUniformLocation(program.Handle, gl.Str(DATA_UNIFORM_NAME)),
 	}
 
 	program.Use()

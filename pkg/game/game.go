@@ -1,30 +1,35 @@
 package game
 
 import (
+	"fmt"
 	"image"
 	"image/color"
 	"remnant/internal/controller"
+	"remnant/pkg/program"
 	"remnant/pkg/scene"
 
 	"github.com/go-gl/glfw/v3.3/glfw"
 )
 
 type Game struct {
-	*controller.GameController
+	*controller.Controller
 	Window *glfw.Window
 }
 
-func NewGame(window *glfw.Window, ctr *controller.GameController) *Game {
+func NewGame(window *glfw.Window) *Game {
 	window.MakeContextCurrent()
 	window.SetCursor(createCursor())
 
+	w, h := window.GetFramebufferSize()
+	ctrl := controller.NewGameController(w, h)
+
 	return &Game{
-		Window:         window,
-		GameController: ctr,
+		Window:     window,
+		Controller: ctrl,
 	}
 }
 
-func (g *Game) LoadScene(scene scene.Scene) error {
+func (g *Game) Load(scene scene.Scene) error {
 	g.Window.SetInputMode(glfw.CursorMode, glfw.CursorDisabled)
 	g.Window.SetMouseButtonCallback(scene.MouseButtonCallback)
 	g.Window.SetCursorPosCallback(scene.MousePositionCallback)
@@ -34,7 +39,62 @@ func (g *Game) LoadScene(scene scene.Scene) error {
 		}
 		g.IsReady = true
 	})
-	return scene.Render(g.Window)
+
+	return nil
+}
+
+func (g *Game) Run(window *glfw.Window, scene *scene.SceneB) error {
+	// Create the shader program
+	program := program.NewProgram(window)
+	defer program.Delete()
+
+	// Load the texture data to the GPU
+	tx := scene.CreateDataTexture()
+	data := program.SetObjectsTextureData(tx)
+
+	// Set the clear color to black
+	program.SetClearColor(0.0, 0.0, 0.0, 1.0)
+
+	// initialize mouse position to middle of screen
+	window.SetCursorPos(float64(g.ScreenWidth)/2, float64(g.ScreenHeight)/2)
+
+	deltaTime := 0.0
+	for !g.Window.ShouldClose() {
+
+		// Statistics
+		seconds := 0.0
+		fps := 0.0
+
+		program.Clear()
+
+		scene.Render(program)
+
+		// Update the shader uniforms
+		program.SetTime(float32(seconds))
+		program.SetResolution(g.ScreenWidth, g.ScreenHeight)
+		program.SetData(data)
+		program.SetLight(scene.Lights())
+		program.SetCamera(scene.Camera())
+
+		// Draw
+		program.Draw()
+
+		// Swap the buffers
+		window.SwapBuffers()
+		glfw.PollEvents()
+
+		fps += 1.0
+		deltaTime = glfw.GetTime()
+		seconds += deltaTime
+		if seconds >= 1.0 {
+			window.SetTitle(fmt.Sprintf("FPS: %.2f", fps))
+			seconds = 0
+			fps = 0.0
+		}
+		glfw.SetTime(0.0)
+	}
+
+	return nil
 }
 
 func createCursor() *glfw.Cursor {
