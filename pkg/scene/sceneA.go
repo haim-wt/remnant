@@ -73,7 +73,7 @@ func (scene *SceneA) Render(window *glfw.Window) error {
 		movement, roll := scene.Ship.Movement.UpdateMovement(window, scene.Camera.Dir, scene.Camera.Up)
 		scene.Ship.ApplyForce(movement)
 
-		scene.Ship.Update(deltaTime * 2)
+		scene.Ship.Update(deltaTime * 9.8)
 		scene.Camera.Pos.CopyVec(scene.Ship.Position)
 
 		scene.Camera.RotateZ(roll)

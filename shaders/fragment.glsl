@@ -4,11 +4,12 @@ uniform float time;
 uniform vec2 resolution;
 uniform sampler2D tex;
 
-uniform vec3 light;
 uniform vec3 camera_position;
 uniform vec3 camera_direction;
 uniform vec3 camera_up;
 uniform float camera_fov;
+
+uniform vec3 light;
 
 const float PI = 3.14159265;
 const float RADIAN = PI / 180.0;
@@ -28,6 +29,22 @@ float sdSphere(vec3 p, float s) {
 float sdBox(vec3 p, vec3 b) {
     vec3 q = abs(p) - b;
     return length(max(q, 0.0)) + min(max(q.x, max(q.y, q.z)), 0.0);
+}
+
+float rand(vec2 uv)
+{
+    return fract(sin(dot(uv, vec2(12.9898, 78.233))) * 43758.5453);
+}
+
+float noise(vec2 p)
+{
+    vec2 ip = floor(p);
+    float r00 = rand(ip);
+    float r01 = rand(ip + vec2(0, 1));
+    float r10 = rand(ip + vec2(1, 0));
+    float r11 = rand(ip + vec2(1, 1));
+    vec2 fp = smoothstep(0., 1., p - ip);
+    return mix(mix(r00, r01, fp.y), mix(r10, r11, fp.y), fp.x);
 }
 
 float compute_distance(vec3 ray) {
@@ -109,11 +126,11 @@ void main() {
         vec3 nor = estimate_normal(pos);
 
         vec3 lig = normalize(light - pos);
-        float dif = clamp(dot(nor, lig), 0.0, 1.0) * calcSoftshadow(pos, lig, 0.1, 16.0, 0.05);
+        float dif = clamp(dot(nor, lig), 0.0, 1.0) * calcSoftshadow(pos, lig, 0.1, 2.0, 0);
         vec3 col = vec3(0.8549, 0.5843, 0.5843) * dif * vec3(0.7); // Simple color multiplication for demonstration
 
         // fog
-        float fogFactor = 1.0 - exp(-0.00001 * distance );
+        float fogFactor = 1.0 - exp(-0.0001 * distance );
         col = mix(col, vec3(0.1), fogFactor); // Simple linear interpolation for fog effect
         color = vec4(col, 1.0);
     } else {
