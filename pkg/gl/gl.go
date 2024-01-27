@@ -13,7 +13,7 @@ type Shader struct {
 }
 
 type GLProgram struct {
-	Pointer uint32
+	Handle  uint32
 	shaders []*Shader
 }
 
@@ -25,29 +25,29 @@ func (prog *GLProgram) Delete() {
 	for _, shader := range prog.shaders {
 		shader.Delete()
 	}
-	gl.DeleteProgram(prog.Pointer)
+	gl.DeleteProgram(prog.Handle)
 }
 
 func (prog *GLProgram) Attach(shaders ...*Shader) {
 	for _, shader := range shaders {
-		gl.AttachShader(prog.Pointer, shader.handle)
+		gl.AttachShader(prog.Handle, shader.handle)
 		prog.shaders = append(prog.shaders, shader)
 	}
 }
 
 func (prog *GLProgram) Use() uint32 {
-	gl.UseProgram(prog.Pointer)
-	return prog.Pointer
+	gl.UseProgram(prog.Handle)
+	return prog.Handle
 }
 
 func (prog *GLProgram) Link() error {
-	gl.LinkProgram(prog.Pointer)
-	return getGlError(prog.Pointer, gl.LINK_STATUS, gl.GetProgramiv, gl.GetProgramInfoLog,
+	gl.LinkProgram(prog.Handle)
+	return getGlError(prog.Handle, gl.LINK_STATUS, gl.GetProgramiv, gl.GetProgramInfoLog,
 		"PROGRAM::LINKING_FAILURE")
 }
 
 func NewGLProgram(shaders ...*Shader) (*GLProgram, error) {
-	prog := &GLProgram{Pointer: gl.CreateProgram()}
+	prog := &GLProgram{Handle: gl.CreateProgram()}
 	prog.Attach(shaders...)
 
 	if err := prog.Link(); err != nil {
@@ -77,16 +77,18 @@ func NewShaderFromFile(file string, sType uint32) (*Shader, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	handle := gl.CreateShader(sType)
 	glSrc, freeFn := gl.Strs(string(src) + "\x00")
 	defer freeFn()
+
 	gl.ShaderSource(handle, 1, glSrc, nil)
 	gl.CompileShader(handle)
-	err = getGlError(handle, gl.COMPILE_STATUS, gl.GetShaderiv, gl.GetShaderInfoLog,
-		"SHADER::COMPILE_FAILURE::"+file)
+	err = getGlError(handle, gl.COMPILE_STATUS, gl.GetShaderiv, gl.GetShaderInfoLog, "SHADER::COMPILE_FAILURE::"+file)
 	if err != nil {
 		return nil, err
 	}
+
 	return &Shader{handle: handle}, nil
 }
 

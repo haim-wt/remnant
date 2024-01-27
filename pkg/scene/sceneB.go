@@ -12,24 +12,22 @@ import (
 	"gonum.org/v1/gonum/mat"
 )
 
-var deltaTime = 0.0
-
-type SceneA struct {
+type SceneB struct {
 	*controller.Controller
 	camera *program.Camera
 	light  *program.Light
-	ship   *ship.Ship
+	person *ship.Ship
 }
 
-func NewSceneA(ctr *controller.Controller) *SceneA {
-	sceneA := &SceneA{
+func NewSceneB(ctr *controller.Controller) *SceneB {
+	sceneB := &SceneB{
 		Controller: ctr,
-		light:      program.NewLight(mat.NewVecDense(3, []float64{0, 1000, 1000})),
-		camera:     program.NewCamera(mat.NewVecDense(3, []float64{0, 128, 64}), 90),
-		ship:       ship.NewShip(mat.NewVecDense(3, []float64{0, 128, 64})),
+		light:      program.NewLight(mat.NewVecDense(3, []float64{100, 100, 0})),
+		camera:     program.NewCamera(mat.NewVecDense(3, []float64{0, 0, -16}), 60),
+		person:     ship.NewShip(mat.NewVecDense(3, []float64{0, 0, -16})),
 	}
 
-	sceneA.ship.Movement = &ship.Movement{
+	sceneB.person.Movement = &ship.Movement{
 		Forward:  input.NewKey(glfw.KeyW),
 		Backward: input.NewKey(glfw.KeyS),
 
@@ -43,21 +41,21 @@ func NewSceneA(ctr *controller.Controller) *SceneA {
 		RollRight: input.NewKey(glfw.KeyE),
 	}
 
-	return sceneA
+	return sceneB
 }
 
-func (scene *SceneA) Render(program *program.Program) error {
-	movement, roll := scene.ship.Movement.UpdateMovement(program.Window, scene.camera.Dir, scene.camera.Up)
+func (scene *SceneB) Render(program *program.Program) error {
+	movement, roll := scene.person.Movement.UpdateMovement(program.Window, scene.camera.Dir, scene.camera.Up)
 
-	scene.ship.ApplyForce(movement)
-	scene.ship.Update(deltaTime * 2)
-	scene.camera.Pos.CopyVec(scene.ship.Position)
+	scene.person.ApplyForce(movement)
+	//scene.person.Update(deltaTime * 2)
+	scene.camera.Pos.CopyVec(scene.person.Position)
 	scene.camera.RotateZ(roll)
 
 	return nil
 }
 
-func (m *SceneA) MouseButtonCallback(window *glfw.Window, button glfw.MouseButton, action glfw.Action, mods glfw.ModifierKey) {
+func (m *SceneB) MouseButtonCallback(window *glfw.Window, button glfw.MouseButton, action glfw.Action, mods glfw.ModifierKey) {
 	if button == glfw.MouseButtonLeft && action == glfw.Press {
 		fmt.Println("Left mouse button pressed")
 	}
@@ -71,7 +69,7 @@ func (m *SceneA) MouseButtonCallback(window *glfw.Window, button glfw.MouseButto
 	}
 }
 
-func (m *SceneA) MousePositionCallback(window *glfw.Window, xpos float64, ypos float64) {
+func (m *SceneB) MousePositionCallback(window *glfw.Window, xpos float64, ypos float64) {
 	mouseX, mouseY := xpos/float64(m.Controller.ScreenWidth), ypos/float64(m.Controller.ScreenHeight)
 	mouseX = mouseX*2 - 1
 	mouseY = (mouseY*2 - 1)
@@ -83,8 +81,8 @@ func (m *SceneA) MousePositionCallback(window *glfw.Window, xpos float64, ypos f
 	window.SetCursorPos(float64(m.Controller.ScreenWidth)/2, float64(m.Controller.ScreenHeight)/2)
 }
 
-func (m *SceneA) CreateDataTexture() []uint8 {
-	width, height := 1, 64
+func (m *SceneB) CreateDataTexture() []uint8 {
+	width, height := 1, 1
 	RND := make([]float32, width*height*4)
 	for i := 0; i < width*height*4; i++ {
 		RND[i] = rand.Float32()
@@ -97,20 +95,20 @@ func (m *SceneA) CreateDataTexture() []uint8 {
 	for y := 0; y < height; y++ {
 		for x := 0; x < width; x++ {
 			offset := (y*width + x) * 4
-			pixels[offset] = uint8(r.Intn(64))   // Red
-			pixels[offset+1] = uint8(r.Intn(64)) // Green
-			pixels[offset+2] = uint8(r.Intn(64)) // Blue
-			pixels[offset+3] = 255               // Alpha
+			pixels[offset] = uint8(r.Intn(8))   // Red
+			pixels[offset+1] = uint8(r.Intn(8)) // Green
+			pixels[offset+2] = uint8(r.Intn(8)) // Blue
+			pixels[offset+3] = 255              // Alpha
 		}
 	}
 
 	return pixels
 }
 
-func (m *SceneA) Lights() *program.Light {
+func (m *SceneB) Lights() *program.Light {
 	return m.light
 }
 
-func (m *SceneA) Camera() *program.Camera {
+func (m *SceneB) Camera() *program.Camera {
 	return m.camera
 }
