@@ -48,17 +48,17 @@ func NewSceneA(ctr *controller.Controller) *SceneA {
 
 func (scene *SceneA) Render(window *glfw.Window) error {
 	// Create the shader program
-	program := program.NewProgram()
+	program := program.NewProgram(window)
 	defer program.Delete()
 
 	// Load the texture data to the GPU
-	data := program.SetObjectsTextureData(createDataTexture())
+	data := program.SetObjectsTextureData(scene.CreateDataTexture())
 
 	// Set the clear color to black
 	program.SetClearColor(0.0, 0.0, 0.0, 1.0)
 
 	// initialize mouse position to middle of screen
-	window.SetCursorPos(float64(scene.GameController.ScreenWidth)/2, float64(scene.GameController.ScreenHeight)/2)
+	window.SetCursorPos(float64(scene.Controller.ScreenWidth)/2, float64(scene.Controller.ScreenHeight)/2)
 
 	// Statistics
 	seconds := 0.0
@@ -70,13 +70,13 @@ func (scene *SceneA) Render(window *glfw.Window) error {
 		// CPU Events
 		glfw.PollEvents()
 
-		movement, roll := scene.Ship.Movement.UpdateMovement(window, scene.Camera.Dir, scene.Camera.Up)
-		scene.Ship.ApplyForce(movement)
+		movement, roll := scene.ship.Movement.UpdateMovement(window, scene.camera.Dir, scene.camera.Up)
+		scene.ship.ApplyForce(movement)
 
-		scene.Ship.Update(deltaTime * 2)
-		scene.Camera.Pos.CopyVec(scene.Ship.Position)
+		scene.ship.Update(deltaTime * 2)
+		scene.camera.Pos.CopyVec(scene.ship.Position)
 
-		scene.Camera.RotateZ(roll)
+		scene.camera.RotateZ(roll)
 		// Clear the screen
 		program.Clear()
 
@@ -84,8 +84,8 @@ func (scene *SceneA) Render(window *glfw.Window) error {
 		program.SetTime(float32(seconds))
 		program.SetResolution(w, h)
 		program.SetData(data)
-		program.SetLight(scene.Light)
-		program.SetCamera(scene.Camera)
+		program.SetLight(scene.light)
+		program.SetCamera(scene.camera)
 
 		// Draw
 		program.Draw()
