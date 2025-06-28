@@ -59,11 +59,9 @@ func (g *Game) Run(window *glfw.Window, scene *scene.SceneB) error {
 	window.SetCursorPos(float64(g.ScreenWidth)/2, float64(g.ScreenHeight)/2)
 
 	deltaTime := 0.0
+	seconds := 0.0
+	fps := 0.0
 	for !g.Window.ShouldClose() {
-
-		// Statistics
-		seconds := 0.0
-		fps := 0.0
 
 		program.Clear()
 
